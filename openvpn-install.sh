@@ -352,13 +352,26 @@ crl-verify crl.pem" >> /etc/openvpn/server.conf
 			IP=$USEREXTERNALIP
 		fi
 	fi
+
+	echo ""
+	echo "Does your server have a well-known public FQDN?"
+	echo ""
+	echo "This may be useful if its public IP is not static"
+	echo "If this is not the case, just ignore this and leave the next field blank"
+	read -p "FQDN: " -e FQDN
+	if [[ "$FQDN" != "" ]]; then
+		SERVER=$FQDN
+	else
+		SERVER=$IP
+	fi
+
 	# client-common.txt is created so we have a template to add further users later
 	echo "client
 dev tun
 proto udp
 sndbuf 0
 rcvbuf 0
-remote $IP $PORT
+remote $SERVER $PORT
 resolv-retry infinite
 nobind
 persist-key
