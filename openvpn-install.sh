@@ -23,6 +23,9 @@ INTERNALSUBNET=10.8.0.0
 INTERNALNETMASKSLASH=24
 INTERNALNETMASK=255.255.255.0
 
+THISINTERNALSUBNET=`route | grep \* | awk '{print $1}'`
+THISINTERNALNETMASK=`route | grep \* | awk '{print $3}'`
+
 if grep -qs "CentOS release 5" "/etc/redhat-release"; then
 	echo "CentOS 5 is too old and not supported"
 	exit 3
@@ -370,6 +373,9 @@ proto udp
 sndbuf 0
 rcvbuf 0
 remote $FQDN $PORT
+route-nopull
+route $INTERNALSUBNET $INTERNALNETMASK
+route $THISINTERNALSUBNET $THISINTERNALNETMASK
 resolv-retry infinite
 nobind
 persist-key
