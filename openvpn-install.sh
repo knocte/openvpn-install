@@ -180,7 +180,27 @@ else
 	echo ""
 	# OpenVPN setup and first user creation
 	echo "I need to ask you a few questions before starting the setup"
-	echo "You can leave the default options and just press enter if you are ok with them"
+
+
+	echo ""
+	echo "Please introduce your public FQDN for this OpenVPN server"
+	echo ""
+	read -p "FQDN: " -e FQDN
+
+	FQDNRESOLVEDIP=$(dig +short $FQDN)
+	EXTERNALIP=$(wget -qO- ipv4.icanhazip.com)
+	if [[ "$FQDNRESOLVEDIP" != "$EXTERNALIP" ]]; then
+		echo ""
+		echo "Looks like your FQDN is wrong because it doesn't match your external IP!"
+		echo ""
+		echo "External IP: $EXTERNALIP"
+		echo "FQDN: $FQDN"
+		echo "FQDN's IP: $FQDNRESOLVEDIP"
+		exit  6
+	fi
+
+
+	echo "From now on, you can leave the default options and just press enter if you are ok with them"
 	echo ""
 	echo "First I need to know the IPv4 address of the network interface you want OpenVPN"
 	echo "listening to."
@@ -342,31 +362,6 @@ crl-verify crl.pem" >> /etc/openvpn/server.conf
 			chkconfig openvpn on
 		fi
 	fi
-	# Try to detect a NATed connection and ask about it to potential LowEndSpirit users
-	EXTERNALIP=$(wget -qO- ipv4.icanhazip.com)
-	if [[ "$IP" != "$EXTERNALIP" ]]; then
-		echo ""
-		echo "Looks like your server is behind a NAT!"
-		echo ""
-		echo "If your server is NATed (e.g. LowEndSpirit), I need to know the external IP"
-		echo "If that's not the case, just ignore this and leave the next field blank"
-		read -p "External IP: " -e USEREXTERNALIP
-		if [[ "$USEREXTERNALIP" != "" ]]; then
-			IP=$USEREXTERNALIP
-		fi
-	fi
-
-	echo ""
-	echo "Does your server have a well-known public FQDN?"
-	echo ""
-	echo "This may be useful if its public IP is not static"
-	echo "If this is not the case, just ignore this and leave the next field blank"
-	read -p "FQDN: " -e FQDN
-	if [[ "$FQDN" != "" ]]; then
-		SERVER=$FQDN
-	else
-		SERVER=$IP
-	fi
 
 	# client-common.txt is created so we have a template to add further users later
 	echo "client
@@ -374,7 +369,7 @@ dev tun
 proto udp
 sndbuf 0
 rcvbuf 0
-remote $SERVER $PORT
+remote $FQDN $PORT
 resolv-retry infinite
 nobind
 persist-key
